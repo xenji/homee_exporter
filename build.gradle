@@ -1,0 +1,104 @@
+buildscript {
+    ext.kotlinVersion = "1.2.30"
+    ext.kotlinArgParser = "2.0.4"
+    ext.http4k = "3.18.1"
+    ext.prometheus = "0.3.0"
+    ext.loggingVersion = "1.5.3"
+    ext.logback = "1.2.3"
+    ext.javaWebsocket = "1.3.7"
+    ext.kotlinterVersion = "1.7.0"
+    ext.gitVersionVersion = "0.10.1"
+    ext.licensePluginVersion = "0.14.0"
+    ext.testLoggerVersion = "1.1.2"
+    ext.shadowJarVersion = "2.0.2"
+
+    repositories {
+        gradlePluginPortal()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "gradle.plugin.org.jmailen.gradle:kotlinter-gradle:$kotlinterVersion"
+        classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:$gitVersionVersion"
+        classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:$licensePluginVersion"
+        classpath "com.adarshr:gradle-test-logger-plugin:$testLoggerVersion"
+        classpath "com.github.jengelman.gradle.plugins:shadow:$shadowJarVersion"
+    }
+}
+
+apply plugin: "kotlin"
+apply plugin: "application"
+apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: "org.jmailen.kotlinter"
+apply plugin: "com.palantir.git-version"
+apply plugin: "com.github.hierynomus.license"
+apply plugin: "com.adarshr.test-logger"
+apply plugin: "idea"
+
+mainClassName = "com.github.xenji.homee.ExporterKt"
+group = "com.github.xenji"
+version gitVersion()
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+    compile "org.http4k:http4k-client-okhttp:${http4k}"
+    compile "org.http4k:http4k-format-moshi:${http4k}"
+    compile "org.java-websocket:Java-WebSocket:${javaWebsocket}"
+    compile "io.prometheus:simpleclient_httpserver:${prometheus}"
+    compile "com.xenomachina:kotlin-argparser:${kotlinArgParser}"
+    compile "io.github.microutils:kotlin-logging:${loggingVersion}"
+    compile "ch.qos.logback:logback-classic:${logback}"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "4.6"
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+jar {
+    baseName = "homee_exporter"
+    version = project.version
+    manifest {
+        attributes(
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Source-Compatibility": project.sourceCompatibility)
+    }
+}
+
+kotlinter {
+    ignoreFailures = true
+    reporter = "checkstyle"
+    continuationIndentSize = 4
+}
+
+
+shadowJar {
+    manifest {
+        inheritFrom project.tasks.jar.manifest
+    }
+}
