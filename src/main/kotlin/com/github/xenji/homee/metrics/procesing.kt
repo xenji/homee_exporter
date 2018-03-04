@@ -15,7 +15,7 @@ private val statusGauge = Gauge
     .register()
 
 private val temperatureGauge = Gauge
-    .build("current_temperature", "")
+    .build("current_temperature", "Tracks the current state of a thermometer")
     .labelNames("node_id", "attribute_id", "name", "unit")
     .register()
 
