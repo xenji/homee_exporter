@@ -132,9 +132,14 @@ private fun homeeCommType(broadcastMessage: String, address: InetAddress): Homee
         val responsePacket = DatagramPacket(ByteArray(4096), 4096)
 
         with(socket) {
+            soTimeout = Duration.ofSeconds(1).toMillis().toInt()
             broadcast = true
             send(packet)
-            receive(responsePacket)
+            try {
+                receive(responsePacket)
+            } catch (e: SocketTimeoutException) {
+                // no-op
+            }
         }
         // FIXME: Security problem: We need to check the response if it matches the desired pattern.
         when (responsePacket.address) {
