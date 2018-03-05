@@ -17,9 +17,18 @@ import java.net.URI
 import java.time.Duration
 import kotlin.concurrent.thread
 
+/**
+ * Implementation for the websocket connection to the homee server.
+ */
 class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWebsocketHeaders, homeeWebsocketTimeout) {
     companion object : KLogging()
 
+    /**
+     * On open, we start a thread that sends a ping every 5 seconds.
+     *
+     * This is a daemon thread that should not keep the JVM up when e.g. CTRL+C
+     * is pressed.
+     */
     override fun onOpen(handshakedata: ServerHandshake) {
         thread(isDaemon = true) {
             logger.debug { "Starting ping/pong thread" }
@@ -47,8 +56,16 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
 
         if (!connectionSuccessful) {
             throw RuntimeException("Reconnecting the websocket failed after $maxRetry attempts. Remote connection was closed with [code: $code | reason: $reason | remote: $remote]")
+        }
     }
 
+    /**
+     * When any message is received, we just want those that start with `{"nodes":[{`.
+     *
+     * Kotlin has no real pattern matching mechanics, therefore we do the poor-mans `startsWith`.
+     *
+     * This is all pretty wonky and needs a more sophisticated approach later.
+     */
     override fun onMessage(message: String?) {
         logger.trace { "Received $message" }
         if (message != null && message.startsWith("""{"nodes":[{""")) {
@@ -57,6 +74,9 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
         }
     }
 
+    /**
+     * On error, we just rethrow for now.
+     */
     override fun onError(ex: Exception) = throw ex
 }
 
