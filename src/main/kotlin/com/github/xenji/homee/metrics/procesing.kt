@@ -38,4 +38,4 @@ private fun handleElectric(node: Node) {
     }
 }
 
-fun String.urlDecoded() = URLDecoder.decode(this, "utf-8")
+fun String.urlDecoded(): String = URLDecoder.decode(this, "utf-8")
