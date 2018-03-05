@@ -12,6 +12,7 @@ import java.lang.Exception
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.net.SocketTimeoutException
 import java.net.URI
 import java.time.Duration
 import kotlin.concurrent.thread
@@ -30,8 +31,22 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
         }
     }
 
+    /**
+     * On close, we try to reconnect up to three times.
+     *
+     * TODO: Find out if any case exists where remote==false and we still want to reconnect!
+     */
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Closed WS connection: {code: $code, reason: '$reason', remote: $remote}" }
+        var maxRetry = 3
+        var connectionSuccessful = false
+        while (remote && maxRetry > 0) {
+            connectionSuccessful = connectBlocking()
+            --maxRetry
+        }
+
+        if (!connectionSuccessful) {
+            throw RuntimeException("Reconnecting the websocket failed after $maxRetry attempts. Remote connection was closed with [code: $code | reason: $reason | remote: $remote]")
     }
 
     override fun onMessage(message: String?) {
