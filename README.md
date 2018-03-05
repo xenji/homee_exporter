@@ -23,6 +23,14 @@ This is by far not complete, but at least it is a start.
 * Custom / free form labels
 
 ## Usage
+
+Running the exporter needs a recent Java Runtime Environment, version 8.
+It should not make a difference if a OpenJDK or Oracle JRE/JDK is used.
+
+This exporter has been tested with macOS and Linux. If anyone tests this
+successfully on Windows, please feel free to open a PR and change this
+documentation accordingly.
+
 ```
 $ java -jar build/libs/homee_exporter-27b0a46.dirty-all.jar -h
 usage: homee_exporter [-h] --username USERNAME --password PASSWORD
