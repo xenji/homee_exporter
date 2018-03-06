@@ -1,0 +1,14 @@
+[Unit]
+Description=Homee Exporter
+Documentation=https://github.com/xenji/homee_exporter
+After=network-online.target
+
+[Service]
+EnvironmentFile=/etc/default/homee_exporter
+User=nobody
+Group=nogroup
+Restart=on-failure
+ExecStart=/usr/bin/env java -jar /usr/local/lib/homee_exporter.jar --username=$USERNAME --password=$PASSWORD--homee-id=$HOMEE_ID --check-interval=$CHECK_INTERVAL --bind-host=$BIND_HOST --bind-port=$BIND_PORT
+
+[Install]
+WantedBy=multi-user.target

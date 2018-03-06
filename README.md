@@ -62,6 +62,15 @@ optional arguments:
   --check-interval CHECK_INTERVAL   Check interval in seconds. Default: 15
 ```
 
+#### Systemd
+
+You can find an example systemd configuration in the `etc` folder.
+The directory layout assumes a debian-like system, please adjust the
+folder according to the distribution you use.
+
+The configuration parameter are to be set in the `/etc/default/homee_exporter`
+environment file and reflect the default values from the cli.
+
 ### Example output
 ```
 # HELP current_energy Tracks the current energy level of a meter
