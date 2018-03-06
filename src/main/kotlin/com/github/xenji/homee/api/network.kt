@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.http4k.format.Moshi
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.drafts.Draft_6455
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 import org.java_websocket.handshake.ServerHandshake
 import org.java_websocket.protocols.Protocol
 import java.lang.Exception
@@ -15,13 +16,18 @@ import java.net.InetAddress
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
 /**
  * Implementation for the websocket connection to the homee server.
  */
-class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWebsocketHeaders, homeeWebsocketTimeout) {
+private class HomeeWsClient(uri: URI) :
+    WebSocketClient(uri, draftWithProtocol, homeeWebsocketHeaders, homeeWebsocketTimeout) {
     companion object : KLogging()
+
+    @Volatile
+    private var pingThread: Boolean = false
 
     /**
      * On open, we start a thread that sends a ping every 5 seconds.
@@ -30,13 +36,15 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
      * is pressed.
      */
     override fun onOpen(handshakedata: ServerHandshake) {
+        pingThread = true
         thread(isDaemon = true) {
             logger.debug { "Starting ping/pong thread" }
-            while (true) {
+            while (pingThread) {
                 logger.trace { "sending ping" }
                 sendPing()
                 Thread.sleep(Duration.ofSeconds(5).toMillis())
             }
+            Thread.interrupted()
         }
     }
 
@@ -47,15 +55,9 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
      */
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Closed WS connection: {code: $code, reason: '$reason', remote: $remote}" }
-        var maxRetry = 3
-        var connectionSuccessful = false
-        while (remote && maxRetry > 0) {
-            connectionSuccessful = connectBlocking()
-            --maxRetry
-        }
-
-        if (!connectionSuccessful) {
-            throw RuntimeException("Reconnecting the websocket failed after $maxRetry attempts. Remote connection was closed with [code: $code | reason: $reason | remote: $remote]")
+        logger.debug { "Shutting down ping thread" }
+        synchronized(this) {
+            pingThread = false
         }
     }
 
@@ -80,6 +82,36 @@ class HomeeWsClient(uri: URI) : WebSocketClient(uri, draftWithProtocol, homeeWeb
     override fun onError(ex: Exception) = throw ex
 }
 
+class HomeeConnection(private val uri: URI) {
+    private val wsClient: AtomicReference<HomeeWsClient> = AtomicReference()
+
+    @Synchronized
+    fun connect() {
+        wsClient.get()?.closeBlocking()
+        wsClient.set(HomeeWsClient((uri)).apply {
+            connectBlocking()
+        })
+    }
+
+    fun asyncData() {
+        sendNodeRequest()
+    }
+
+    private fun sendNodeRequest(currentTry: Int = 0, maxRetry: Int = 3) {
+        try {
+            wsClient.get()?.send("GET:nodes")
+        } catch (e: WebsocketNotConnectedException) {
+            when {
+                currentTry < maxRetry -> {
+                    connect()
+                    sendNodeRequest(currentTry + 1, maxRetry)
+                }
+                else -> throw RuntimeException("Cannot reconnect", e)
+            }
+        }
+    }
+}
+
 /**
  * Finds the correct homee to talk to (either via local network or via the internet)
  */
@@ -95,9 +127,9 @@ fun authenticatedHomeeWebsocket(accessToken: String, websocketUri: String) = "$w
  *
  * We don't do this async, because without a connection this whole thing makes no sense.
  */
-fun webSocket(homeeWs: String): HomeeWsClient {
+fun webSocket(homeeWs: String): HomeeConnection {
     logger.trace { "Using WS URI: $homeeWs" }
-    return HomeeWsClient(URI.create(homeeWs)).apply { connectBlocking() }
+    return HomeeConnection(URI.create(homeeWs))
 }
 
 private const val broadcastPort = 15263

@@ -20,18 +20,23 @@ fun main(args: Array<String>) = mainBody("homee_exporter") {
     ArgParser(args).parseInto(::ExporterArguments).run {
         val (homeeUrl, homeeWs) = findHomee(homeeId)
         val accessToken = homeeAccessToken(homeeUrl, username, password, httpClient)
-        val wsClient = webSocket(authenticatedHomeeWebsocket(accessToken, homeeWs))
+        val homeeConnection = webSocket(authenticatedHomeeWebsocket(accessToken, homeeWs))
+
+        homeeConnection.connect()
 
         // get initially all nodes
-        logger.info { "Starting all-nodes call" }
+        logger.info { "Starting metrics collection..." }
         thread(isDaemon = true) {
             while (true) {
-                wsClient.send("GET:nodes")
+                logger.debug { "Calling API for metrics..." }
+                homeeConnection.asyncData()
+                logger.trace{ "Sleeping $checkInterval seconds" }
                 Thread.sleep(Duration.ofSeconds(checkInterval).toMillis())
             }
         }
-        startServer(bindHost, bindPort)
 
+        logger.info { "Starting webserver at $bindHost:$bindPort" }
+        startServer(bindHost, bindPort)
     }
     Unit
 }
