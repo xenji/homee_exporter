@@ -9,6 +9,7 @@ User=nobody
 Group=nogroup
 Restart=on-failure
 ExecStart=/usr/bin/env java -jar /usr/local/lib/homee_exporter.jar --username=$USERNAME --password=$PASSWORD--homee-id=$HOMEE_ID --check-interval=$CHECK_INTERVAL --bind-host=$BIND_HOST --bind-port=$BIND_PORT
+SuccessExitStatus=143
 
 [Install]
 WantedBy=multi-user.target
