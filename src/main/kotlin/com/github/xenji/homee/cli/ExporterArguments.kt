@@ -41,4 +41,16 @@ class ExporterArguments(parser: ArgParser) {
         help = "Check interval in seconds. Default: 15",
         transform = { toLong() }
     ).default(15)
+
+    val pingInterval: Long by parser.storing(
+        "--ping-interval",
+        help = "The interval in seconds used to ping the homee. Default: 10",
+        transform = { toLong() }
+    ).default(10)
+
+    val exportOnlyGroup: Int by parser.storing(
+        "--export-group-id",
+        help = "Exports only metrics from the given group ID. If the group is not set, all supported devices are exported.",
+        transform = { toInt() }
+    ).default(-1)
 }

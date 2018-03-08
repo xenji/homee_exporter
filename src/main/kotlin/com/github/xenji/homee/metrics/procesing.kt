@@ -7,6 +7,11 @@ import java.net.URLDecoder
 
 private val logger = KotlinLogging.logger("Processing")
 
+private val homeeGauge: Gauge = Gauge
+    .build("current_homee", "Tracks the homee status")
+    .labelNames("status_id", "status_name")
+    .register()
+
 private val energyGauge: Gauge = Gauge
     .build("current_energy", "Tracks the current energy level of a meter")
     .labelNames("node_id", "attribute_id", "name", "unit")
@@ -27,21 +32,39 @@ private val temperatureGauge = Gauge
     .labelNames("node_id", "attribute_id", "name", "unit")
     .register()
 
-fun updateMetrics(nodes: List<Node>) {
-    nodes.forEach {
-        when (it.profile) {
-            11, 12, 13, 19, 22, 2004 -> handleElectric(it)
-            2003, 3001, 3005, 3009, 4016, 4017 -> handleTemperature(it)
-            4010, 4015 -> {
-                handleTemperature(it)
-                handleLight(it)
-            }
-            1000 -> handleLight(it)
+fun updateMetrics(nodes: List<Node>, onlyInGroup: Int = -1) {
+    nodes
+        .filter {
+            if (onlyInGroup > 0) it.id in groupToNodeMembership.get(onlyInGroup)
+            else true
         }
+        .forEach {
+            when (it.id) {
+                -1 -> handleHomee(it)
+            }
+            when (it.profile) {
+                11, 12, 13, 19, 22, 2004 -> handleElectric(it)
+                2003, 3001, 3005, 3009, 4016, 4017 -> handleTemperature(it)
+                4010, 4015 -> {
+                    handleTemperature(it)
+                    handleLight(it)
+                }
+                1000 -> handleLight(it)
+            }
+        }
+}
+
+private fun handleHomee(node: Node) {
+    val statusAttribute = node.attributes.find { it.type == 205 }
+    when (statusAttribute!!.current_value) {
+        0.0 -> homeeGauge.labels("0", "at_home").set(0.0)
+        1.0 -> homeeGauge.labels("1", "sleeping").set(1.0)
+        2.0 -> homeeGauge.labels("2", "absent").set(2.0)
+        3.0 -> homeeGauge.labels("3", "vacation").set(3.0)
     }
 }
 
-fun handleLight(node: Node) {
+private fun handleLight(node: Node) {
     node.attributes.forEach {
         when (it.type) {
             11 -> {
@@ -57,7 +80,7 @@ fun handleLight(node: Node) {
     }
 }
 
-fun handleTemperature(node: Node) {
+private fun handleTemperature(node: Node) {
     node.attributes.forEach {
         when (it.type) {
             5 -> {

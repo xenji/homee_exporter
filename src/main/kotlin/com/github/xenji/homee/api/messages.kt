@@ -45,3 +45,6 @@ data class Node(
 )
 
 data class NodesResponse(val nodes: List<Node>)
+
+data class Relationship(val id: Int, val group_id: Int, val node_id: Int, val homeegram_id: Int, val order: Int)
+data class Relationships(val relationships: List<Relationship> = listOf())

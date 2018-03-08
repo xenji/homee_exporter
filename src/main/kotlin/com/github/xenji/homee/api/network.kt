@@ -1,6 +1,7 @@
 package com.github.xenji.homee.api
 
 import com.github.xenji.homee.metrics.updateMetrics
+import com.github.xenji.homee.metrics.updateRelationships
 import mu.KLogging
 import mu.KotlinLogging
 import org.http4k.format.Moshi
@@ -22,8 +23,11 @@ import kotlin.concurrent.thread
 /**
  * Implementation for the websocket connection to the homee server.
  */
-private class HomeeWsClient(uri: URI) :
-    WebSocketClient(uri, draftWithProtocol, homeeWebsocketHeaders, homeeWebsocketTimeout) {
+private class HomeeWsClient(
+    uri: URI,
+    private val pingInterval: Long,
+    private val onlyGroup: Int
+) : WebSocketClient(uri, draftWithProtocol, homeeWebsocketHeaders, homeeWebsocketTimeout) {
     companion object : KLogging()
 
     @Volatile
@@ -36,13 +40,16 @@ private class HomeeWsClient(uri: URI) :
      * is pressed.
      */
     override fun onOpen(handshakedata: ServerHandshake) {
+        Runtime.getRuntime().addShutdownHook(thread(start = false, isDaemon = false) {
+            this.closeConnection(-1, "JVM Shutdown")
+        })
         pingThread = true
         thread(isDaemon = true) {
             logger.debug { "Starting ping/pong thread" }
             while (pingThread) {
                 logger.trace { "sending ping" }
                 sendPing()
-                Thread.sleep(Duration.ofSeconds(5).toMillis())
+                Thread.sleep(Duration.ofSeconds(pingInterval).toMillis())
             }
             Thread.interrupted()
         }
@@ -70,9 +77,15 @@ private class HomeeWsClient(uri: URI) :
      */
     override fun onMessage(message: String?) {
         logger.trace { "Received $message" }
-        if (message != null && message.startsWith("""{"nodes":[{""")) {
-            val nr = Moshi.asA<NodesResponse>(message)
-            updateMetrics(nr.nodes)
+        if (message != null) {
+            if (message.startsWith("""{"nodes":[{""")) {
+                val nr = Moshi.asA<NodesResponse>(message)
+                updateMetrics(nr.nodes, onlyGroup)
+            }
+            if (message.startsWith("""{"relationships":""")) {
+                val relationships = Moshi.asA<Relationships>(message)
+                updateRelationships(relationships.relationships)
+            }
         }
     }
 
@@ -82,15 +95,23 @@ private class HomeeWsClient(uri: URI) :
     override fun onError(ex: Exception) = throw ex
 }
 
-class HomeeConnection(private val uri: URI) {
+class HomeeConnection(
+    private val uri: URI,
+    private val pingInterval: Long,
+    private val onlyGroup: Int
+) {
     private val wsClient: AtomicReference<HomeeWsClient> = AtomicReference()
 
     @Synchronized
     fun connect() {
         wsClient.get()?.closeBlocking()
-        wsClient.set(HomeeWsClient((uri)).apply {
+        wsClient.set(HomeeWsClient(uri, pingInterval, onlyGroup).apply {
             connectBlocking()
         })
+    }
+
+    fun groups() {
+        sendRelationshipRequest()
     }
 
     fun asyncData() {
@@ -105,6 +126,20 @@ class HomeeConnection(private val uri: URI) {
                 currentTry < maxRetry -> {
                     connect()
                     sendNodeRequest(currentTry + 1, maxRetry)
+                }
+                else -> throw RuntimeException("Cannot reconnect", e)
+            }
+        }
+    }
+
+    private fun sendRelationshipRequest(currentTry: Int = 0, maxRetry: Int = 3) {
+        try {
+            wsClient.get()?.send("GET:relationships")
+        } catch (e: WebsocketNotConnectedException) {
+            when {
+                currentTry < maxRetry -> {
+                    connect()
+                    sendRelationshipRequest(currentTry + 1, maxRetry)
                 }
                 else -> throw RuntimeException("Cannot reconnect", e)
             }
@@ -127,9 +162,9 @@ fun authenticatedHomeeWebsocket(accessToken: String, websocketUri: String) = "$w
  *
  * We don't do this async, because without a connection this whole thing makes no sense.
  */
-fun webSocket(homeeWs: String): HomeeConnection {
+fun webSocket(homeeWs: String, pingInterval: Long, onlyGroup: Int): HomeeConnection {
     logger.trace { "Using WS URI: $homeeWs" }
-    return HomeeConnection(URI.create(homeeWs))
+    return HomeeConnection(URI.create(homeeWs), pingInterval, onlyGroup)
 }
 
 private const val broadcastPort = 15263
