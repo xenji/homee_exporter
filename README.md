@@ -13,14 +13,20 @@ This is by far not complete, but at least it is a start.
 * Auto detection if the Homee is in the local LAN via UDP broadcast
 * Every restart issues a new authentication token
 * Websocket connection to Homee (either local or to their web app)
-* Get all electricity meters to report their stuff
+* Narrow the export to a single group (a device can be part of
+  multiple groups, you can create an artificial one to you can control
+  the visibility of devices)
 
-### What does not work?
-* Planned but not yet implemented:
-    * Temperature,
-    * Binary states (window/door sensors)
-    * ...
-* Custom / free form labels
+## Exported Metrics
+
+Here is a list of metrics already exported. If you miss anything, please
+look for an open issue or file a new issue.
+
+* Electric energy
+* Light/Brightness
+* Temperature
+* Homee Status (Home, Sleeping, Away, Vacation)
+
 
 ## Usage
 
@@ -32,34 +38,43 @@ successfully on Windows, please feel free to open a PR and change this
 documentation accordingly.
 
 ```
-$ java -jar build/libs/homee_exporter-27b0a46.dirty-all.jar -h
+$ java -jar build/libs/homee_exporter-0.2.0-all.jar -h
 usage: homee_exporter [-h] --username USERNAME --password PASSWORD
                       [--bind-host BIND_HOST] [--bind-port BIND_PORT]
                       --homee-id HOMEE_ID [--check-interval CHECK_INTERVAL]
+                      [--ping-interval PING_INTERVAL]
+                      [--export-group-id EXPORT_GROUP_ID]
 
 required arguments:
-  --username USERNAME               homee username
+  --username USERNAME                 homee username
 
-  --password PASSWORD               your SHA-512 hashed homee password. You
-                                    can generate the hashed password by e.g.
-                                    using
-                                    https://passwordsgenerator.net/sha512-has
-                                    h-generator/
+  --password PASSWORD                 your SHA-512 hashed homee password. You
+                                      can generate the hashed password by e.g.
+                                      using
+                                      https://passwordsgenerator.net/sha512-h
+                                      ash-generator/
 
-  --homee-id HOMEE_ID               The unique ID of your homee (find it on
-                                    the bottom of your cube)
+  --homee-id HOMEE_ID                 The unique ID of your homee (find it on
+                                      the bottom of your cube)
 
 
 optional arguments:
-  -h, --help                        show this help message and exit
+  -h, --help                          show this help message and exit
 
-  --bind-host BIND_HOST             The IP or hostname to bind the web server
-                                    to. Default: all interfaces
+  --bind-host BIND_HOST               The IP or hostname to bind the web
+                                      server to. Default: all interfaces
 
-  --bind-port BIND_PORT             The port to bind the web server to.
-                                    Default: 7100
+  --bind-port BIND_PORT               The port to bind the web server to.
+                                      Default: 7100
 
-  --check-interval CHECK_INTERVAL   Check interval in seconds. Default: 15
+  --check-interval CHECK_INTERVAL     Check interval in seconds. Default: 15
+
+  --ping-interval PING_INTERVAL       The interval in seconds used to ping the
+                                      homee. Default: 10
+
+  --export-group-id EXPORT_GROUP_ID   Exports only metrics from the given
+                                      group ID. If the group is not set, all
+                                      supported devices are exported.
 ```
 
 #### Systemd

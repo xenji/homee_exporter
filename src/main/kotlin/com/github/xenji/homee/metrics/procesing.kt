@@ -59,7 +59,7 @@ private fun handleHomee(node: Node) {
     when (statusAttribute!!.current_value) {
         0.0 -> homeeGauge.labels("0", "at_home").set(0.0)
         1.0 -> homeeGauge.labels("1", "sleeping").set(1.0)
-        2.0 -> homeeGauge.labels("2", "absent").set(2.0)
+        2.0 -> homeeGauge.labels("2", "away").set(2.0)
         3.0 -> homeeGauge.labels("3", "vacation").set(3.0)
     }
 }
