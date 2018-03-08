@@ -11,7 +11,7 @@ buildscript {
     ext.licensePluginVersion = "0.14.0"
     ext.testLoggerVersion = "1.1.2"
     ext.shadowJarVersion = "2.0.2"
-
+    ext.guavaVersion = "24.0-jre"
     repositories {
         gradlePluginPortal()
         jcenter()
@@ -57,6 +57,7 @@ dependencies {
     compile "com.xenomachina:kotlin-argparser:${kotlinArgParser}"
     compile "io.github.microutils:kotlin-logging:${loggingVersion}"
     compile "ch.qos.logback:logback-classic:${logback}"
+    compile "com.google.guava:guava:${guavaVersion}"
 }
 
 task wrapper(type: Wrapper) {
