@@ -26,6 +26,10 @@ look for an open issue or file a new issue.
 * Light/Brightness
 * Temperature
 * Homee Status (Home, Sleeping, Away, Vacation)
+* Binary Sensors
+* Motion Alarms
+* Battery Levels
+* Link Quality to e.g. Netatmo devices
 
 
 ## Usage
