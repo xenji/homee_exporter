@@ -17,7 +17,9 @@ import java.net.InetAddress
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.time.Duration
+import java.util.Timer
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.thread
 
 /**
@@ -31,7 +33,7 @@ private class HomeeWsClient(
     companion object : KLogging()
 
     @Volatile
-    private var pingThread: Boolean = false
+    private lateinit var pingThread: Timer
 
     /**
      * On open, we start a thread that sends a ping every 5 seconds.
@@ -43,16 +45,11 @@ private class HomeeWsClient(
         Runtime.getRuntime().addShutdownHook(thread(start = false, isDaemon = false) {
             this.closeConnection(-1, "JVM Shutdown")
         })
-        pingThread = true
-        thread(isDaemon = true) {
-            logger.debug { "Starting ping/pong thread" }
-            while (pingThread) {
-                logger.trace { "sending ping" }
+
+        pingThread =
+            fixedRateTimer(name = "ping_timer", daemon = true, period = Duration.ofSeconds(pingInterval).toMillis()) {
                 sendPing()
-                Thread.sleep(Duration.ofSeconds(pingInterval).toMillis())
             }
-            Thread.interrupted()
-        }
     }
 
     /**
@@ -63,9 +60,7 @@ private class HomeeWsClient(
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Closed WS connection: {code: $code, reason: '$reason', remote: $remote}" }
         logger.debug { "Shutting down ping thread" }
-        synchronized(this) {
-            pingThread = false
-        }
+        pingThread.cancel()
     }
 
     /**
