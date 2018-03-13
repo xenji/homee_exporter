@@ -38,11 +38,15 @@ fun homeeAccessToken(
         .form("device_os", "6")
         .form("device_app", "1")
 
-    val response = authClient(request)
-    if (response.status.code > 399) { // FIXME: This should be more precise. What if we get 5xx?
-        throw RuntimeException("Authentication request failure: ${response.status}")
+    return with(authClient(request)) {
+        if (status.code > 399) { // FIXME: This should be more precise. What if we get 5xx?
+            throw RuntimeException("Authentication request failure: $status")
+        }
+
+        val cookie = cookies().first { it.name == "access_token" }
+        // todo: check expiry date-time
+
+        close()
+        cookie.value
     }
-    val token = response.cookies().first { it.name == "access_token" }.value
-    response.close()
-    return token
 }
