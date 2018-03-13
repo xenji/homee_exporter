@@ -46,6 +46,10 @@ private class HomeeWsClient(
             this.closeConnection(-1, "JVM Shutdown")
         })
 
+        if (::pingThread.isInitialized) {
+            pingThread.cancel()
+        }
+
         pingThread =
             fixedRateTimer(name = "ping_timer", daemon = true, period = Duration.ofSeconds(pingInterval).toMillis()) {
                 sendPing()
