@@ -60,7 +60,9 @@ private class HomeeWsClient(
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.info { "Closed WS connection: {code: $code, reason: '$reason', remote: $remote}" }
         logger.debug { "Shutting down ping thread" }
-        pingThread.cancel()
+        if (::pingThread.isInitialized) {
+            pingThread.cancel()
+        }
     }
 
     /**
