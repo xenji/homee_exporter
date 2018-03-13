@@ -1,5 +1,6 @@
 package com.github.xenji.homee.metrics
 
+import com.github.xenji.homee.api.Attribute
 import com.github.xenji.homee.api.Node
 import io.prometheus.client.Gauge
 import java.net.URLDecoder
@@ -52,21 +53,21 @@ fun updateMetrics(nodes: List<Node>, onlyInGroup: Int = -1) = nodes
     .forEach {
         when (it.id) {
             -1 -> handleHomee(it)
+            else -> it
+                .attributes
+                .forEach { attr ->
+                    when (attr.type) {
+                        1 -> updateHavingBinaryStatus(statusGauge, it.id, it.name, attr)
+                        3, 4 -> updateHavingMeteredValue(energyGauge, it.id, it.name, attr)
+                        5 -> updateHavingMeteredValue(temperatureGauge, it.id, it.name, attr)
+                        8 -> updateHavingMeteredValue(batteryGauge, it.id, it.name, attr)
+                        11 -> updateHavingMeteredValue(lightGauge, it.id, it.name, attr)
+                        14, 19 -> updateHavingBinaryStatus(statusGauge, it.id, it.name, attr)
+                        25 -> updateHavingBinaryStatus(motionGauge, it.id, it.name, attr)
+                        33 -> updateHavingMeteredValue(linkQualityGauge, it.id, it.name, attr)
+                    }
+                }
         }
-        when (it.profile) {
-            11, 12, 13, 19, 22, 2004 -> handleElectric(it)
-            2003, 3001, 3005, 3009, 4016, 4017 -> handleTemperature(it)
-            4010, 4015 -> {
-                handleTemperature(it)
-                handleLight(it)
-            }
-            1000 -> handleLight(it)
-        }
-        // todo: iterate only once over attrs
-        handleBatteryLevel(it)
-        handleLinkQuality(it)
-        handleBinarySwitch(it)
-        handleMotionALarm(it)
     }
 
 private fun handleHomee(node: Node) = when (node.attributes.find { it.type == 205 }!!.current_value) {
@@ -78,87 +79,12 @@ private fun handleHomee(node: Node) = when (node.attributes.find { it.type == 20
     }
 }
 
-private fun handleLight(node: Node) = node
-    .attributes
-    .forEach {
-        when (it.type) {
-            11 -> {
-                lightGauge.labels(
-                    node.id.toString(),
-                    it.id.toString(),
-                    node.name.urlDecoded(),
-                    it.unit.urlDecoded()
-                )
-                    .set(it.current_value)
-            }
-        }
-    }
+private fun updateHavingBinaryStatus(gauge: Gauge, nodeId: Int, nodeName: String, attr: Attribute) =
+    gauge.labels(nodeId.toString(), attr.id.toString(), nodeName.urlDecoded())
+        .set(attr.current_value)
 
-private fun handleTemperature(node: Node) = node
-    .attributes
-    .forEach {
-        when (it.type) {
-            5 -> {
-                temperatureGauge.labels(
-                    node.id.toString(),
-                    it.id.toString(),
-                    node.name.urlDecoded(),
-                    it.unit.urlDecoded()
-                )
-                    .set(it.current_value)
-            }
-        }
-    }
+private fun updateHavingMeteredValue(gauge: Gauge, nodeId: Int, nodeName: String, attr: Attribute) =
+    gauge.labels(nodeId.toString(), attr.id.toString(), nodeName.urlDecoded(), attr.unit.urlDecoded())
+        .set(attr.current_value)
 
-private fun handleElectric(node: Node) = node
-    .attributes
-    .forEach {
-        when (it.type) {
-            3, 4 -> {
-                energyGauge.labels(node.id.toString(), it.id.toString(), node.name.urlDecoded(), it.unit.urlDecoded())
-                    .set(it.current_value)
-            }
-        }
-    }
-
-private fun handleBatteryLevel(node: Node) = node
-    .attributes
-    .filter {
-        it.type == 8
-    }
-    .forEach {
-        batteryGauge.labels(node.id.toString(), it.id.toString(), node.name.urlDecoded(), it.unit.urlDecoded())
-            .set(it.current_value)
-    }
-
-private fun handleLinkQuality(node: Node) = node
-    .attributes
-    .filter {
-        it.type == 33
-    }
-    .forEach {
-        linkQualityGauge.labels(node.id.toString(), it.id.toString(), node.name.urlDecoded(), it.unit.urlDecoded())
-            .set(it.current_value)
-    }
-
-private fun handleBinarySwitch(node: Node) = node
-    .attributes
-    .filter {
-        it.type == 1 || it.type == 14 || it.type == 19
-    }
-    .forEach {
-        statusGauge.labels(node.id.toString(), it.id.toString(), node.name.urlDecoded())
-            .set(it.current_value)
-    }
-
-private fun handleMotionALarm(node: Node) = node
-    .attributes
-    .filter {
-        it.type == 25
-    }
-    .forEach {
-        motionGauge.labels(node.id.toString(), it.id.toString(), node.name.urlDecoded())
-            .set(it.current_value)
-    }
-
-fun String.urlDecoded(): String = URLDecoder.decode(this, "utf-8")
+fun String.urlDecoded(): String = URLDecoder.decode(this, Charsets.UTF_8.name())
