@@ -6,9 +6,9 @@ buildscript {
     ext.loggingVersion = "1.5.3"
     ext.logback = "1.2.3"
     ext.javaWebsocket = "1.3.7"
-    ext.kotlinterVersion = "1.7.0"
     ext.gitVersionVersion = "0.10.1"
     ext.licensePluginVersion = "0.14.0"
+    ext.gradleOSPackagePluginVersion = "4.8.0"
     ext.testLoggerVersion = "1.1.2"
     ext.shadowJarVersion = "2.0.2"
     ext.guavaVersion = "24.0-jre"
@@ -19,22 +19,23 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath "gradle.plugin.org.jmailen.gradle:kotlinter-gradle:$kotlinterVersion"
         classpath "gradle.plugin.com.palantir.gradle.gitversion:gradle-git-version:$gitVersionVersion"
         classpath "gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:$licensePluginVersion"
         classpath "com.adarshr:gradle-test-logger-plugin:$testLoggerVersion"
         classpath "com.github.jengelman.gradle.plugins:shadow:$shadowJarVersion"
+        classpath "com.netflix.nebula:gradle-ospackage-plugin:$gradleOSPackagePluginVersion"
     }
 }
 
 apply plugin: "kotlin"
 apply plugin: "application"
 apply plugin: "com.github.johnrengelman.shadow"
-apply plugin: "org.jmailen.kotlinter"
 apply plugin: "com.palantir.git-version"
 apply plugin: "com.github.hierynomus.license"
 apply plugin: "com.adarshr.test-logger"
 apply plugin: "idea"
+apply plugin: "nebula.ospackage"
+apply plugin: 'nebula.deb'
 
 mainClassName = "com.github.xenji.homee.ExporterKt"
 group = "com.github.xenji"
@@ -91,15 +92,34 @@ jar {
     }
 }
 
-kotlinter {
-    ignoreFailures = true
-    reporter = "checkstyle"
-    continuationIndentSize = 4
-}
-
-
 shadowJar {
     manifest {
         inheritFrom project.tasks.jar.manifest
+    }
+}
+
+task debPkg(type: Deb) {
+    packageName = 'homee-exporter'
+    user = 'nobody'
+    release = 1
+    license = 'MIT'
+    configurationFile('/etc/default/homee_exporter')
+    requires('java8-runtime-headless')
+
+    into '/opt/homee_exporter'
+
+    from(shadowJar.outputs.files) {
+        into 'lib'
+    }
+
+    from('src/main/etc/default/') {
+        fileType CONFIG | NOREPLACE
+        into '/etc/default/'
+    }
+
+    from('src/main/etc/systemd/system') {
+        fileType CONFIG
+        into '/lib/systemd/system/'
+        filter { it.replaceAll('@@version@@', project.version) }
     }
 }

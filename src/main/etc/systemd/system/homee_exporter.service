@@ -8,7 +8,14 @@ EnvironmentFile=/etc/default/homee_exporter
 User=nobody
 Group=nogroup
 Restart=on-failure
-ExecStart=/usr/bin/env java -jar /usr/local/lib/homee_exporter.jar --username=$USERNAME --password=$PASSWORD--homee-id=$HOMEE_ID --check-interval=$CHECK_INTERVAL --bind-host=$BIND_HOST --bind-port=$BIND_PORT
+ExecStart=/usr/bin/env java \
+-Xmx64m \
+-Xms32m \
+-XX:+UseCompressedOops \
+-Djava.awt.headless=true \
+-XX:+UseG1GC \
+-XX:MaxGCPauseMillis=200 \
+-jar /opt/homee_exporter/lib/homee_exporter-@@version@@-all.jar --username=${USERNAME} --password=${PASSWORD} --homee-id=${HOMEE_ID} --check-interval=${CHECK_INTERVAL} --bind-host=${BIND_HOST} --bind-port=${BIND_PORT}
 SuccessExitStatus=143
 
 [Install]
