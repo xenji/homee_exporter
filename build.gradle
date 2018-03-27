@@ -63,7 +63,7 @@ dependencies {
 
 task wrapper(type: Wrapper) {
     gradleVersion = "4.6"
-    distributionType = DistributionType.ALL
+    distributionType = Wrapper.DistributionType.ALL
 }
 
 idea {
