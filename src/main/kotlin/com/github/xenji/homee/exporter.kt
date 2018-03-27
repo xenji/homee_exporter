@@ -21,9 +21,9 @@ import com.github.xenji.homee.api.findHomee
 import com.github.xenji.homee.api.homeeAccessToken
 import com.github.xenji.homee.api.webSocket
 import com.github.xenji.homee.cli.ExporterArguments
-import com.github.xenji.homee.metrics.startServer
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.mainBody
+import io.prometheus.client.exporter.HTTPServer
 import mu.KotlinLogging
 import org.http4k.client.OkHttp
 import org.http4k.core.BodyMode
@@ -48,7 +48,7 @@ fun main(args: Array<String>) = mainBody("homee_exporter") {
         }
 
         logger.info { "Starting webserver at $bindHost:$bindPort" }
-        startServer(bindHost, bindPort)
+        HTTPServer(bindHost, bindPort)
     }
     Unit
 }
