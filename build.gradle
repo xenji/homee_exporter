@@ -43,7 +43,7 @@ apply plugin: "io.gitlab.arturbosch.detekt"
 
 mainClassName = "com.github.xenji.homee.ExporterKt"
 group = "com.github.xenji"
-version = gitVersion()
+version gitVersion()
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -126,12 +126,12 @@ task debPkg(type: Deb) {
     }
 
     from('src/main/etc/default/') {
-        fileType = CONFIG | NOREPLACE
+        fileType CONFIG | NOREPLACE
         into '/etc/default/'
     }
 
     from('src/main/etc/systemd/system') {
-        fileType = CONFIG
+        fileType CONFIG
         into '/lib/systemd/system/'
         filter { it.replaceAll('@@version@@', project.version as String) }
     }
