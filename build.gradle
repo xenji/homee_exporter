@@ -39,7 +39,7 @@ apply plugin: 'nebula.deb'
 
 mainClassName = "com.github.xenji.homee.ExporterKt"
 group = "com.github.xenji"
-version gitVersion()
+version = gitVersion()
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -63,7 +63,7 @@ dependencies {
 
 task wrapper(type: Wrapper) {
     gradleVersion = "4.6"
-    distributionType = Wrapper.DistributionType.ALL
+    distributionType = DistributionType.ALL
 }
 
 idea {
@@ -113,13 +113,13 @@ task debPkg(type: Deb) {
     }
 
     from('src/main/etc/default/') {
-        fileType CONFIG | NOREPLACE
+        fileType = CONFIG | NOREPLACE
         into '/etc/default/'
     }
 
     from('src/main/etc/systemd/system') {
-        fileType CONFIG
+        fileType = CONFIG
         into '/lib/systemd/system/'
-        filter { it.replaceAll('@@version@@', project.version) }
+        filter { it.replaceAll('@@version@@', project.version as String) }
     }
 }
