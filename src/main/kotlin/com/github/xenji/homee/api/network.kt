@@ -17,8 +17,6 @@
 package com.github.xenji.homee.api
 
 import mu.KotlinLogging
-import org.java_websocket.drafts.Draft_6455
-import org.java_websocket.protocols.Protocol
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -46,8 +44,8 @@ fun webSocket(homeeWs: String, pingInterval: Long, onlyGroup: Int): HomeeConnect
     return HomeeConnection(URI.create(homeeWs), pingInterval, onlyGroup)
 }
 
-private const val broadcastPort = 15263
-private const val homeeLocalPort = 7681
+private const val BROADCAST_PORT = 15263
+private const val HOMEE_LOCAL_PORT = 7681
 private val logger = KotlinLogging.logger("network")
 
 private sealed class HomeeCommType
@@ -73,7 +71,7 @@ private fun globalUrl(homeeId: String) = "https://$homeeId.hom.ee"
 /**
  * Generate local http url
  */
-private fun localUrl(ip: String) = "http://$ip:$homeeLocalPort"
+private fun localUrl(ip: String) = "http://$ip:$HOMEE_LOCAL_PORT"
 
 /**
  * Generate global websocket connection URI
@@ -83,7 +81,7 @@ private fun globalWss(homeeId: String) = "wss://$homeeId.hom.ee/connection"
 /**
  * Generate local websocket connection URI
  */
-private fun localWs(ip: String) = "ws://$ip:$homeeLocalPort/connection"
+private fun localWs(ip: String) = "ws://$ip:$HOMEE_LOCAL_PORT/connection"
 
 /**
  * Checks the availability of a local homee instance via broadcast.
@@ -91,7 +89,7 @@ private fun localWs(ip: String) = "ws://$ip:$homeeLocalPort/connection"
 private fun homeeCommType(broadcastMessage: String, address: InetAddress): HomeeCommType =
     DatagramSocket().use { socket ->
         val buffer = broadcastMessage.toByteArray()
-        val packet = DatagramPacket(buffer, buffer.size, address, broadcastPort)
+        val packet = DatagramPacket(buffer, buffer.size, address, BROADCAST_PORT)
         val responsePacket = DatagramPacket(ByteArray(4096), 4096)
 
         with(socket) {
@@ -104,7 +102,6 @@ private fun homeeCommType(broadcastMessage: String, address: InetAddress): Homee
                 // no-op
             }
         }
-        // FIXME: Security problem: We need to check the response if it matches the desired pattern.
         when (responsePacket.address) {
             null -> HomeeGlobal()
             else -> HomeeLocal(responsePacket.address.hostAddress)

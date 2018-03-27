@@ -28,7 +28,8 @@ class ExporterArguments(parser: ArgParser) {
 
     val password: String by parser.storing(
         "--password",
-        help = "your SHA-512 hashed homee password. You can generate the hashed password by e.g. using https://passwordsgenerator.net/sha512-hash-generator/"
+        help = "your SHA-512 hashed homee password. You can generate the hashed password by e.g. " +
+            "using https://passwordsgenerator.net/sha512-hash-generator/"
     )
 
     val bindHost: String by parser.storing(
@@ -66,7 +67,8 @@ class ExporterArguments(parser: ArgParser) {
 
     val exportOnlyGroup: Int by parser.storing(
         "--export-group-id",
-        help = "Exports only metrics from the given group ID. If the group is not set, all supported devices are exported.",
+        help = "Exports only metrics from the given group ID. If the group is not set, " +
+            "all supported devices are exported.",
         transform = { toInt() }
     ).default(-1)
 }

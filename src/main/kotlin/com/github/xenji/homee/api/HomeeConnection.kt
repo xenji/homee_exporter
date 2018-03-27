@@ -52,7 +52,7 @@ class HomeeConnection(
                     connect()
                     sendNodeRequest(currentTry + 1, maxRetry)
                 }
-                else -> throw RuntimeException("Cannot reconnect", e)
+                else -> throw e
             }
         }
     }
@@ -66,7 +66,7 @@ class HomeeConnection(
                     connect()
                     sendRelationshipRequest(currentTry + 1, maxRetry)
                 }
-                else -> throw RuntimeException("Cannot reconnect", e)
+                else -> throw e
             }
         }
     }

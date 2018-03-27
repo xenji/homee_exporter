@@ -31,25 +31,33 @@ private val temperatureGauge = meteredGauge("current_temperature", "Tracks the c
 private val batteryGauge = meteredGauge("current_battery", "Tracks the current battery level")
 private val linkQualityGauge = meteredGauge("current_linkquality", "Tracks the current battery level")
 
+private val typeMapping = mapOf(
+    1 to prepBinaryGauge(statusGauge),
+    3 to prepMeteredGauge(energyGauge),
+    4 to prepMeteredGauge(energyGauge),
+    5 to prepMeteredGauge(temperatureGauge),
+    8 to prepMeteredGauge(batteryGauge),
+    11 to prepMeteredGauge(lightGauge),
+    14 to prepBinaryGauge(statusGauge),
+    19 to prepBinaryGauge(statusGauge),
+    25 to prepBinaryGauge(motionGauge),
+    33 to prepMeteredGauge(linkQualityGauge)
+)
+
 fun updateMetrics(nodes: List<Node>, onlyInGroup: Int = -1) = nodes
     .filter { if (onlyInGroup > 0) it.id in groupToNodeMembership.get(onlyInGroup) else true }
     .forEach {
         when (it.id) {
             -1 -> handleHomee(it)
-            else -> it.attributes.forEach { attr ->
-                when (attr.type) {
-                    1 -> updateHavingBinaryStatus(statusGauge, it.id, it.name, attr)
-                    3, 4 -> updateHavingMeteredValue(energyGauge, it.id, it.name, attr)
-                    5 -> updateHavingMeteredValue(temperatureGauge, it.id, it.name, attr)
-                    8 -> updateHavingMeteredValue(batteryGauge, it.id, it.name, attr)
-                    11 -> updateHavingMeteredValue(lightGauge, it.id, it.name, attr)
-                    14, 19 -> updateHavingBinaryStatus(statusGauge, it.id, it.name, attr)
-                    25 -> updateHavingBinaryStatus(motionGauge, it.id, it.name, attr)
-                    33 -> updateHavingMeteredValue(linkQualityGauge, it.id, it.name, attr)
-                }
-            }
+            else -> processAttributes(it, it.attributes)
         }
     }
+
+private fun processAttributes(node: Node, attributes: List<Attribute>) = attributes.forEach {
+    if (it.type in typeMapping) {
+        typeMapping[it.type]?.invoke(node.id, node.name, it)
+    }
+}
 
 private fun handleHomee(node: Node) = when (node.attributes.find { it.type == 205 }!!.current_value) {
     0.0 -> homeeGauge.labels("0", "at_home").set(0.0)
@@ -60,6 +68,12 @@ private fun handleHomee(node: Node) = when (node.attributes.find { it.type == 20
         // om-nom-nom
     }
 }
+
+private fun prepMeteredGauge(gauge: Gauge): (nodeId: Int, nodeName: String, attr: Attribute) -> Unit =
+    { nodeId: Int, nodeName: String, attr: Attribute -> updateHavingMeteredValue(gauge, nodeId, nodeName, attr) }
+
+private fun prepBinaryGauge(gauge: Gauge): (nodeId: Int, nodeName: String, attr: Attribute) -> Unit =
+    { nodeId: Int, nodeName: String, attr: Attribute -> updateHavingBinaryStatus(gauge, nodeId, nodeName, attr) }
 
 private fun updateHavingBinaryStatus(gauge: Gauge, nodeId: Int, nodeName: String, attr: Attribute) =
     gauge.labels(

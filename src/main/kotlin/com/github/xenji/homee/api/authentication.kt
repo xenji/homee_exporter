@@ -55,14 +55,13 @@ fun homeeAccessToken(
         .form("device_app", "1")
 
     return with(authClient(request)) {
-        if (status.code > 399) { // FIXME: This should be more precise. What if we get 5xx?
-            throw RuntimeException("Authentication request failure: $status")
+        if (status.code > 399) {
+            throw AuthenticationException("Authentication request failure: $status")
         }
-
         val cookie = cookies().first { it.name == "access_token" }
-        // todo: check expiry date-time
-
         close()
         cookie.value
     }
 }
+
+class AuthenticationException(msg: String) : RuntimeException(msg)
