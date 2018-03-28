@@ -31,7 +31,6 @@ look for an open issue or file a new issue.
 * Battery Levels
 * Link Quality to e.g. Netatmo devices
 
-
 ## Usage
 
 Running the exporter needs a recent Java Runtime Environment, version 8.
@@ -42,7 +41,7 @@ successfully on Windows, please feel free to open a PR and change this
 documentation accordingly.
 
 ```
-$ java -jar build/libs/homee_exporter-0.2.0-all.jar -h
+$ java -jar homee_exporter.jar -h
 usage: homee_exporter [-h] --username USERNAME --password PASSWORD
                       [--bind-host BIND_HOST] [--bind-port BIND_PORT]
                       --homee-id HOMEE_ID [--check-interval CHECK_INTERVAL]
@@ -83,7 +82,7 @@ optional arguments:
 
 #### Systemd
 
-You can find an example systemd configuration in the `etc` folder.
+You can find an example systemd configuration in the `src/main/etc` folder.
 The directory layout assumes a debian-like system, please adjust the
 folder according to the distribution you use.
 
@@ -103,3 +102,18 @@ current_energy{node_id="18",attribute_id="195",name="Wallplug Küche Kühlschran
 current_energy{node_id="10",attribute_id="127",name="Basement IT",unit="W",} 15.59
 current_energy{node_id="16",attribute_id="172",name="Treppen",unit="kWh",} 6.98
 ```
+
+## Installation
+
+### Debian package
+
+The package is currently unsigned, I'm working on this.
+
+Install the package:
+
+    #> echo "deb https://dl.bintray.com/xenji/homee-exporter any main" | sudo tee -a /etc/apt/sources.list
+    #> apt-get install homee-exporter
+
+When done, edit the config file:
+
+    #> vim /etc/default/homee_exporter
