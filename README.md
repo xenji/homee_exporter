@@ -1,7 +1,7 @@
-# Homee Prometheus.io exporter
+# homee Prometheus.io exporter
 
 ## Info
-This is my own, homegrown exporter for Homee prometheus.io.
+This is my own, homegrown exporter for homee prometheus.io.
 It is based on information I found around the net and some reverse
 engineering of their web app using a Charles proxy, a bit of nmap and
 tcpdump.
@@ -10,9 +10,9 @@ This is by far not complete, but at least it is a start.
 
 ### What works
 
-* Auto detection if the Homee is in the local LAN via UDP broadcast
+* Auto detection if the homee is in the local LAN via UDP broadcast
 * Every restart issues a new authentication token
-* Websocket connection to Homee (either local or to their web app)
+* Websocket connection to homee (either local or to their web app)
 * Narrow the export to a single group (a device can be part of
   multiple groups, you can create an artificial one to you can control
   the visibility of devices)
@@ -25,7 +25,7 @@ look for an open issue or file a new issue.
 * Electric energy
 * Light/Brightness
 * Temperature
-* Homee Status (Home, Sleeping, Away, Vacation)
+* homee Status (Home, Sleeping, Away, Vacation)
 * Binary Sensors
 * Motion Alarms
 * Battery Levels
