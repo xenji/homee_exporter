@@ -117,6 +117,7 @@ task debPkg(type: Deb) {
     release = 1
     license = 'MIT'
     configurationFile('/etc/default/homee_exporter')
+    configurationFile('/lib/systemd/system/homee_exporter.service')
     requires('java8-runtime-headless')
 
     into '/opt/homee_exporter'
