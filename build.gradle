@@ -14,6 +14,7 @@ buildscript {
     ext.guavaVersion = "24.0-jre"
     ext.detektPluginVersion = "1.0.0.RC6-4"
     ext.bintrayPluginVersion = "1.8.0"
+    ext.githubReleasePlugin = "1.1.3"
     repositories {
         jcenter()
         gradlePluginPortal()
@@ -28,6 +29,7 @@ buildscript {
         classpath "com.netflix.nebula:gradle-ospackage-plugin:$gradleOSPackagePluginVersion"
         classpath "gradle.plugin.io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektPluginVersion"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintrayPluginVersion"
+        classpath "gradle.plugin.com.github.breadmoirai:github-release:$githubReleasePlugin"
     }
 }
 
@@ -42,7 +44,7 @@ apply plugin: "nebula.ospackage"
 apply plugin: "nebula.deb"
 apply plugin: "io.gitlab.arturbosch.detekt"
 apply plugin: 'com.jfrog.bintray'
-
+apply plugin: "com.github.breadmoirai.github-release"
 
 mainClassName = "com.github.xenji.homee.ExporterKt"
 group = "com.github.xenji"
@@ -112,18 +114,17 @@ shadowJar {
     manifest {
         inheritFrom project.tasks.jar.manifest
     }
+    archiveName = 'homee_exporter.jar'
 }
 
-task debPkg(type: Deb) {
 
+ospackage {
     packageName = 'homee-exporter'
     user = 'nobody'
     release = 1
     license = 'MIT'
     configurationFile('/etc/default/homee_exporter')
     configurationFile('/lib/systemd/system/homee_exporter.service')
-    requires('java8-runtime-headless')
-
     into '/opt/homee_exporter'
 
     from(shadowJar.outputs.files) {
@@ -138,16 +139,21 @@ task debPkg(type: Deb) {
     from('src/main/etc/systemd/system') {
         fileType CONFIG
         into '/lib/systemd/system/'
-        filter { it.replaceAll('@@version@@', project.version as String) }
     }
 }
+
+buildDeb {
+    requires('java8-runtime-headless')
+}
+
+buildDeb.dependsOn build
 
 bintray {
     user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
     key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
 
     filesSpec {
-        from debPkg.getArchivePath()
+        from buildDeb.getArchivePath()
         into '.'
     }
 
@@ -168,7 +174,7 @@ bintray {
         version {
             name = gitVersion()
             desc = 'homee prometheus exporter'
-            released  = new Date()
+            released = new Date()
             vcsTag = gitVersion()
             gpg {
                 sign = true
@@ -177,3 +183,26 @@ bintray {
         }
     }
 }
+
+_bintrayRecordingCopy.dependsOn buildDeb
+
+githubRelease {
+    token = project.hasProperty('githubToken') ? project.property('githubToken') : System.getenv('GITHUB_TOKEN')
+    owner = "xenji"
+    repo = "homee_exporter"
+    tagName = gitVersion()
+    targetCommitish = "master"
+    draft = true
+    prerelease = versionDetails().isCleanTag
+    def files = []
+    files.addAll(buildDeb.outputs.files.filter { it.name.endsWith(".deb") })
+    files.addAll(shadowDistTar.outputs.files)
+    files.addAll(shadowDistZip.outputs.files)
+    files.addAll(distZip.outputs.files)
+    files.addAll(distTar.outputs.files)
+    releaseAssets = files
+}
+
+tasks.findByName("githubRelease").dependsOn buildDeb
+
+
