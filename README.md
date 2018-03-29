@@ -107,7 +107,10 @@ current_energy{node_id="16",attribute_id="172",name="Treppen",unit="kWh",} 6.98
 
 ### Debian package
 
-The package is currently unsigned, I'm working on this.
+#### Caveats
+
+The current packaging needs to overwrite the systemd unit file every
+time the package gets updated. This is subject to change soon.
 
 Install the package:
 
