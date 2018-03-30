@@ -19,6 +19,7 @@ package com.github.xenji.homee
 import com.github.xenji.homee.api.authenticatedHomeeWebsocket
 import com.github.xenji.homee.api.findHomee
 import com.github.xenji.homee.api.homeeAccessToken
+import com.github.xenji.homee.api.useGivenHomee
 import com.github.xenji.homee.api.webSocket
 import com.github.xenji.homee.cli.ExporterArguments
 import com.xenomachina.argparser.ArgParser
@@ -34,7 +35,10 @@ val httpClient = OkHttp(bodyMode = BodyMode.Stream)
 val logger = KotlinLogging.logger("Main")
 fun main(args: Array<String>) = mainBody("homee_exporter") {
     ArgParser(args).parseInto(::ExporterArguments).run {
-        val (homeeUrl, homeeWs) = findHomee(homeeId)
+        val (homeeUrl, homeeWs) = when (predefinedHomeeIP) {
+            "" -> findHomee(homeeId)
+            else -> useGivenHomee(predefinedHomeeIP)
+        }
         val accessToken = homeeAccessToken(homeeUrl, username, password, httpClient)
         val homeeConnection =
             webSocket(authenticatedHomeeWebsocket(accessToken, homeeWs), pingInterval, exportOnlyGroup)

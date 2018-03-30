@@ -71,4 +71,10 @@ class ExporterArguments(parser: ArgParser) {
             "all supported devices are exported.",
         transform = { toInt() }
     ).default(-1)
+
+    val predefinedHomeeIP: String by parser.storing(
+        "--predefined-homee-ip",
+        help = "If the homee is in a different network than the exporter, the broadcast won't work. Use " +
+            "this option to tell the exporter where to find the homee cube."
+    ).default("")
 }

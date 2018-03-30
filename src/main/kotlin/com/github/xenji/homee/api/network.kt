@@ -30,6 +30,11 @@ import java.time.Duration
 fun findHomee(homeeId: String): Pair<String, String> = findHomeeSelective(homeeId)
 
 /**
+ * Uses the given IP to construct the homee coordinates
+ */
+fun useGivenHomee(ip: String): Pair<String, String> = localUrl(ip) to localWs(ip)
+
+/**
  * Adds the access token to the url
  */
 fun authenticatedHomeeWebsocket(accessToken: String, websocketUri: String) = "$websocketUri?access_token=$accessToken"
@@ -40,7 +45,7 @@ fun authenticatedHomeeWebsocket(accessToken: String, websocketUri: String) = "$w
  * We don't do this async, because without a connection this whole thing makes no sense.
  */
 fun webSocket(homeeWs: String, pingInterval: Long, onlyGroup: Int): HomeeConnection {
-    logger.trace { "Using WS URI: $homeeWs" }
+    logger.info { "Using WS URI: $homeeWs" }
     return HomeeConnection(URI.create(homeeWs), pingInterval, onlyGroup)
 }
 
