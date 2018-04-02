@@ -114,9 +114,10 @@ time the package gets updated. This is subject to change soon.
 
 Install the package:
 
-    #> curl "https://bintray.com/user/downloadSubjectPublicKey?username=xenji" | apt-key add -
+    #> curl "https://bintray.com/user/downloadSubjectPublicKey?username=xenji" | sudo apt-key add -
     #> echo "deb [arch=noarch] https://dl.bintray.com/xenji/homee-exporter stable main" | sudo tee -a /etc/apt/sources.list
-    #> apt-get install homee-exporter
+    #> sudo apt-get update
+    #> sudo apt-get install homee-exporter
 
 When done, edit the config file:
 
