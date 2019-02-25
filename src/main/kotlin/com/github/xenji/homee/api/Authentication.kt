@@ -44,17 +44,7 @@ fun homeeAccessToken(
 ): String {
     logger.trace { "Using $homeeUrl for requesting the access_token" }
     val authClient = ClientFilters.BasicAuth(user.urlEncoded(), encPassword.toLowerCase()).then(client)
-    val request = Request(Method.POST, "$homeeUrl/access_token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .header("Referer", "https://my.hom.ee/")
-        .header("Origin", "https://my.hom.ee")
-        .form("device_hardware_id", "82b07059ef69a6b2e9285f05de76fe3b")
-        .form("device_name", "Web App | Firefox (58.0)")
-        .form("device_type", "4")
-        .form("device_os", "6")
-        .form("device_app", "1")
-
-    return with(authClient(request)) {
+    return with(authClient(buildRequest(homeeUrl))) {
         if (status.code > 399) {
             throw AuthenticationException("Authentication request failure: $status")
         }
@@ -63,5 +53,16 @@ fun homeeAccessToken(
         cookie.value
     }
 }
+
+private fun buildRequest(homeeUrl: String) 
+    = Request(Method.POST, "$homeeUrl/access_token")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .header("Referer", "https://my.hom.ee/")
+        .header("Origin", "https://my.hom.ee")
+        .form("device_hardware_id", "82b07059ef69a6b2e9285f05de76fe3b")
+        .form("device_name", "Web App | Firefox (58.0)")
+        .form("device_type", "4")
+        .form("device_os", "6")
+        .form("device_app", "1")
 
 class AuthenticationException(msg: String) : RuntimeException(msg)

@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlinVersion = "1.3.11"
+    ext.kotlinVersion = "1.3.21"
     ext.kotlinArgParser = "2.0.7"
     ext.http4k = "3.105.0"
     ext.prometheus = "0.6.0"
@@ -12,12 +12,12 @@ buildscript {
     ext.testLoggerVersion = "1.6.0"
     ext.shadowJarVersion = "4.0.3"
     ext.guavaVersion = "27.0.1-jre"
-    ext.detektPluginVersion = "1.0.0.RC8"
+    ext.detektPluginVersion = "1.0.0-RC14"
     ext.bintrayPluginVersion = "1.8.0"
-    ext.githubReleasePlugin = "2.0.1"
+    ext.githubReleasePlugin = "2.2.4"
     repositories {
-        jcenter()
         gradlePluginPortal()
+        mavenCentral()
     }
 
     dependencies {
@@ -27,7 +27,7 @@ buildscript {
         classpath "com.adarshr:gradle-test-logger-plugin:$testLoggerVersion"
         classpath "com.github.jengelman.gradle.plugins:shadow:$shadowJarVersion"
         classpath "com.netflix.nebula:gradle-ospackage-plugin:$gradleOSPackagePluginVersion"
-        classpath "gradle.plugin.io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektPluginVersion"
+        classpath "io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektPluginVersion"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintrayPluginVersion"
         classpath "gradle.plugin.com.github.breadmoirai:github-release:$githubReleasePlugin"
     }
@@ -54,6 +54,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    mavenCentral()
     jcenter()
 }
 
@@ -70,9 +71,9 @@ dependencies {
     compile "com.google.guava:guava:${guavaVersion}"
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = "4.10.2"
-    distributionType = Wrapper.DistributionType.ALL
+wrapper {
+    gradleVersion = "5.2.1"
+    //distributionType = Wrapper.DistributionType.ALL
 }
 
 idea {
@@ -91,12 +92,10 @@ compileTestKotlin {
 }
 
 detekt {
-    version = "1.0.0.RC8"
-    profile("main") {
-        input = "$projectDir/src/main/kotlin"
-        config = "$projectDir/detekt.yml"
-        filters = ".*test.*,.*/resources/.*,.*/tmp/.*"
-    }
+    toolVersion = "1.0.0-RC14"
+    input = files("$projectDir/src/main/kotlin")
+    config = files("$projectDir/detekt.yml")
+    filters = ".*test.*,.*/resources/.*,.*/tmp/.*"
 }
 
 jar {

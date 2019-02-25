@@ -90,7 +90,7 @@ complexity:
     threshold: 150
   LongMethod:
     active: true
-    threshold: 20
+    threshold: 30
   LongParameterList:
     active: true
     threshold: 6
@@ -215,7 +215,7 @@ naming:
     functionPattern: '^([a-z$][a-zA-Z$0-9]*)|(`.*`)$'
     excludeClassPattern: '$^'
   MatchingDeclarationName:
-    active: true
+    active: false
   MemberNameEqualsClassName:
     active: false
     ignoreOverriddenFunction: true
@@ -311,13 +311,13 @@ style:
   MagicNumber:
     active: true
     ignoreNumbers: '-1,0,1,2'
-    ignoreHashCodeFunction: false
-    ignorePropertyDeclaration: false
+    ignoreHashCodeFunction: true
+    ignorePropertyDeclaration: true
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
-    ignoreAnnotation: false
+    ignoreAnnotation: true
     ignoreNamedArgument: true
-    ignoreEnums: false
+    ignoreEnums: true
   MaxLineLength:
     active: true
     maxLineLength: 120
